@@ -3,4 +3,4 @@ import(quantreg)
 import(lqmm)
 
 # export all functions to working environment
-exportPattern("^[^\\.]")
+exportPattern("^[[:alpha:]]+")

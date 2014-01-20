@@ -2,10 +2,10 @@
 \alias{ao.sym}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-Defining the link-glm object for the AO symmetric transformation 
+AO symmetric transformation
 }
 \description{
-This function defines the AO symmetric link function used by glm() and glm.fit() for the binomial family
+Function to define the AO symmetric transformation
 }
 \usage{
 ao.sym(phi, verbose = FALSE)
@@ -16,10 +16,12 @@ ao.sym(phi, verbose = FALSE)
 Transformation parameter
 }
   \item{verbose}{
-Verbose message
+TRUE or FALSE. Default is FALSE
 }
 }
-
+\author{
+Hakim-Moulay Dehbi
+}
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
 \keyword{ ~kwd1 }

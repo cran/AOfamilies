@@ -13,7 +13,7 @@ This package implements both the AO symmetric and asymmetric transformations for
 Package: \tab AOfamilies\cr
 Type: \tab Package\cr
 Version: \tab 1.0\cr
-Date: \tab 2012-10-18\cr
+Date: \tab 2012-10-16\cr
 License: \tab GPL (>= 2)\cr
 }
 

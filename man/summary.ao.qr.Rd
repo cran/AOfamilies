@@ -20,20 +20,7 @@ Not used
 }
 }
 
-\examples{
-## labor dataset
-data(labor)
-data <- labor
 
-## fit the model using ao.qr() with a symmetric transformation  
-## for the quantile 0.25 with the method "linprog"
-fit.ao.qr <- ao.qr(pain ~ treatment*time, data = data, 
-                   kappa = 0.25, estimation = "linprog", 
-				   transfo = "ao.sym")
-
-## summarize the model and assign the summary to a "summary.ao.qr" object 				   
-summary.fit.ao.qr <- summary.ao.qr (fit.ao.qr)					
-}
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
 \keyword{ ~kwd1 }

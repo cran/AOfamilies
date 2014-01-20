@@ -22,18 +22,6 @@ Not used
 Printing the MLE of the transformation parameter, its associated log-likelihood and the coefficients of the regression
 }
 
-\examples{
-## labor dataset
-data(labor)
-data <- labor
-
-## fit the model using ao.qr() with a symmetric transformation 
-## for the quantile 0.25 with the method "linprog"
-fit.ao.qr <- ao.qr(pain ~ treatment*time, data = data, 
-                   kappa = 0.25, estimation = "linprog",
-                   transfo = "ao.sym") 
-fit.ao.qr
-}
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
 \keyword{ ~kwd1 }

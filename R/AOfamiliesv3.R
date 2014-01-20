@@ -640,11 +640,12 @@ class(object$fit.MLE) <- c(object$fit.MLE$class, c("glm", "lm"))
 logLik(object$fit.MLE)
 }
 
+
 ### QR part
 
 ## central fitting function of the package for QR
 ao.qr.fit <- function (x, y, weights, kappa, 
-                       phi, se, estimation, 
+                       phi, se, estimation, method,
 					   epsilon, transfo, R,
 					   ...){
 
@@ -684,12 +685,15 @@ ao <- log((1/phi[i])*((1 - theta)^(-phi[i]) - 1))
 }
 
 if (estimation == "laplace"){ 
-fit.seq <- try (lqm (ao ~ x - 1, iota = kappa, weights = weights,
+fit.seq <- try (lqm (ao ~ x - 1, 
+#tau = kappa, 
+weights = weights,
                 ...), silent = TRUE)
 } else { 
 if (estimation == "linprog"){
-fit.seq <- try (rq (ao ~ x - 1, tau = kappa, weights = weights, # ~ x[,2:ncol(x)]
-                ...), silent = TRUE)
+fit.seq <- try (rq (ao ~ x - 1, tau = kappa, method = method, 
+                    weights = weights, # ~ x[,2:ncol(x)]
+                    ...), silent = TRUE)
 } 
 }
 
@@ -698,14 +702,18 @@ fit.seq <- try (rq (ao ~ x - 1, tau = kappa, weights = weights, # ~ x[,2:ncol(x)
 if (class (fit.seq) == "try-error") {
 logLikvector[i] <- -1/0
 } else {
+
 ## extract predictions
 if (estimation == "laplace"){
-predict.seq <- predict(fit.seq, interval = TRUE, level = 0.95)
+predict.seq <- predict(fit.seq, interval = TRUE, level = 0.95
+)
 } else { 
 if (estimation == "linprog"){
-predict.seq <- predict(fit.seq, type = c("none"), 
-                       interval = c("confidence"),
-                       level = 0.95, newdata = list(x = x), 
+predict.seq <- predict(fit.seq, method = method,
+                      type = c("none"), 
+                      interval = c("confidence"),
+                      level = 0.95, 
+newdata = list(x = x), 
                        se = se)
 }
 } 
@@ -715,7 +723,7 @@ max.y <- max(y)
 eps <- epsilon
 
 fitted <- rep (0, length(predict.seq))
-for (j in 1:length(predict.seq)){
+for (j in 1:(length(predict.seq))){
 if (transfo == "ao.sym") { 
 if (phi[i] != 0){
 if (abs(0.5*predict.seq[j]*phi[i]) < 1){
@@ -759,10 +767,12 @@ fitted[j] <- min.y + ((max.y + eps) - (min.y - eps)) *
 }
 }
 }
+
 fitted.data <- matrix (fitted, ncol = 3)
 res <- y - fitted.data[,1]
+estimated.sigma <- mean(res * (kappa - ifelse(res <= 0 , 1, 0))) #### !!!!!!!!!
 logLikvector[i] <- mean (
-                   dal(res, mu = 0, sigma = 1, p = kappa, 
+                   dal(res, mu = 0, sigma = estimated.sigma,# tau = kappa, 
                        log = T))
 }
 }
@@ -799,7 +809,7 @@ if (transfo == "ao.asym"){ # asymmetric transfo
 if (valid.lambda[MLE.pos] == 1){
 ao <- log (theta/(1 - theta)) # define the logit transfo
 } else {
-if (phi[i] == 0){
+if (valid.lambda[MLE.pos] == 0){
 ao <- log (-log(1 - theta)) # define the cloglog transfo
 } else {
 ao <- log((1/valid.lambda[MLE.pos])*((1 - theta)^(-valid.lambda[MLE.pos]) - 1))
@@ -811,11 +821,12 @@ transfo.new <- "ao.asym"
 }
 
 if (estimation == "laplace"){ 
-fit <- try (lqm (ao ~ x - 1, iota = kappa, weights = weights,
+fit <- try (lqm (ao ~ x - 1, #tau = kappa, 
+weights = weights,
                 ...), silent = TRUE)
 } else { 
 if (estimation == "linprog"){
-fit <- try (rq (ao ~ x - 1, tau = kappa, weights = weights, 
+fit <- try (rq (ao ~ x - 1, tau = kappa, method = method, weights = weights, 
                 ...), silent = TRUE)
 }
 }
@@ -834,12 +845,17 @@ fit.coef <- fit$coef
 
 ## extract predictions
 if (estimation == "laplace"){
-predict.all <- predict(fit, interval = TRUE, level = 0.95)
+predict.all <- predict(fit
+, interval = TRUE, level = 0.95
+)
 } else { 
 if (estimation == "linprog"){
-predict.all <- predict(fit, type = c("none"), 
-                   interval = c("confidence"),
-                   level = 0.95, newdata = list(x = x), 
+predict.all <- predict(fit, 
+type = c("none"), 
+method = method, 
+interval = c("confidence"),
+                 level = 0.95,
+ newdata = list(x = x), 
                    se = se)
 }
 } 
@@ -847,26 +863,26 @@ predict.all <- predict(fit, type = c("none"),
 ## return list as output				   
 list (fit.coef.table = fit.coef.table, 
       fit.coef = fit.coef,
-	  valid.lambda = valid.lambda, 
-	  valid.logLik = valid.logLik, 
-	  MLE = valid.lambda[MLE.pos],
-	  logLik.MLE = max (logLikvector [ok.logLik]),
+	valid.lambda = valid.lambda, 
+	valid.logLik = valid.logLik, 
+	MLE = valid.lambda[MLE.pos], MLE.pos = MLE.pos,
+	logLik.MLE = max (logLikvector [ok.logLik]),
       estimation = estimation, kappa = kappa, 
       resp = y, design.matrix = x,  
-	  transfo.new = transfo.new, phi.new = phi.new,
+	transfo.new = transfo.new, phi.new = phi.new,
       predict.all = predict.all, 
-	  transfo = transfo,
-	  epsilon = epsilon, 
+	transfo = transfo,
+	epsilon = epsilon, 
       ao = ao,  
-	  fit = fit
-	  )
+	fit = fit
+	)
 }
 
 ## generic function of the package 
 ao.qr <- function (x, ...) UseMethod ("ao.qr") 
 
 ## default method of the package for QR
-ao.qr.default <- function (x, y, weights,  
+ao.qr.default <- function (x, y, weights, method, 
                            kappa, phi, estimation, 
                            epsilon, transfo, se, R, 
                            ...){
@@ -874,8 +890,8 @@ x <- as.matrix (x)
 y <- as.numeric (y)
 
 fit <- ao.qr.fit (x, y, weights = weights, kappa = kappa, 
-                  phi = phi, estimation = estimation, 
-				  epsilon = epsilon, se = se, R = R, 
+                  phi = phi, estimation = estimation, method = method,
+	            epsilon = epsilon, se = se, R = R, 
                   transfo = transfo, ...)
 
 class (fit) <- c ("ao.qr")
@@ -885,11 +901,12 @@ fit
 ## formula method of the package for QR
 ao.qr.formula <- function (formula, data = list(), 
                            weights = rep (1, length (y)), 
-                           kappa = 0.5, phi = seq(0.00,1.6,0.05), 
+                           kappa = 0.5, phi = seq(0,1.5,0.005), 
                            estimation = "laplace", 
                            epsilon = 0.001, transfo = "ao.sym",
-                           plotit = "TRUE", 
-						   se = "boot", R = 100, ...){
+                           plotit = "TRUE", method = "br",
+				   se = "boot", R = 100, 
+...){
 						   
 ## keep the arguments which should go into the model frame
 mf <- match.call (expand.dots = TRUE)
@@ -912,9 +929,10 @@ x <- model.matrix (mt, mf, contrasts)
 weights <- model.weights (mf)
 
 fit <- ao.qr.default (x, y, weights = weights, kappa, phi, 
-                      estimation = estimation, 
+                      estimation = estimation, method = method, 
                       epsilon = epsilon, transfo = transfo,
-                      se = se, R = R, ...)
+                      se = se, R = R, 
+...)
 
 fit$call <- match.call()
 fit$formula <- formula
@@ -922,6 +940,7 @@ fit$model <- mf
 fit$plotit <- plotit
 fit$se <- se
 fit$R <- R
+fit$method <- method
 fit
 }	
 				   
@@ -1020,7 +1039,7 @@ se <- object$se
 
 if(is.null(newdata)){
 fitted <- rep (0, length(predict.all))
-for (i in 1:length(predict.all)){
+for (i in 1:(length(predict.all))){
 if (object$transfo.new == "ao.sym"){ 
 if (phi != 0){
 if (abs(0.5*predict.all[i]*phi) < 1){
@@ -1071,11 +1090,12 @@ predict.all <- predict(object$fit, newdata = x,interval = TRUE,
                        level = 0.95)
 } else {
 predict.all <- predict(object$fit, type = c("none"), 
-                       interval = c("confidence"), level = 0.95, 
+                       interval = c("confidence"), 
+                       level = 0.95, 
                        newdata = list(x = x), se = se)
 } 
 fitted <- rep (0, length(predict.all))
-for (i in 1:length(predict.all)){
+for (i in 1:(length(predict.all))){
 if (object$transfo.new == "ao.sym"){ 
 if (phi != 0){
 if (abs(0.5*predict.all[i]*phi) < 1){
@@ -1114,7 +1134,7 @@ fitted[i] <- min.y + ((max.y + eps) - (min.y - eps)) *
 }
 
 fitted <- matrix (fitted, ncol = 3)
-colnames (fitted) <- colnames (predict.all)
+colnames (fitted) <- colnames (predict.all) 
 res <- list (fitted = fitted)
 class (res) <- "predict.ao.qr"
 invisible(res)
@@ -1136,7 +1156,7 @@ phi <- object$phi.new
 predict.all <- object$predict.all
 
 fitted <- rep (0, length(predict.all))
-for (i in 1:length(predict.all)){
+for (i in 1:(length(predict.all))){
 if (object$transfo.new == "ao.sym") { 
 if (phi != 0){
 if (abs(0.5*predict.all[i]*phi) < 1){
@@ -1187,3 +1207,5 @@ print.fitted.ao.qr <- function (x, ...){
 cat (paste ("Estimate(s):\n"))
 print(x$fitted)
 }
+
+

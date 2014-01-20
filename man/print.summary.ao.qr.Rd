@@ -22,21 +22,6 @@ Not used
 \details{
 This function prints the call of the function, the quantile considered, the MLE and its associated log-likelihood. It formats the coefficients, standard errors, etc. and additionally gives "significance stars"
 }
-
-\examples{
-## labor dataset
-data(labor)
-data <- labor
-
-## fit the model using ao.qr() with a symmetric transformation  
-## for the quantile 0.25 with the method "linprog"
-fit.ao.qr <- ao.qr(pain ~ treatment*time, data = data, 
-                   kappa = 0.25, estimation = "linprog", 
-                   transfo = "ao.sym")
-
-## print the summary of the model
-summary (fit.ao.qr)	
-}
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
 \keyword{ ~kwd1 }
